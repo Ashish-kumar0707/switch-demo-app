@@ -51,12 +51,12 @@ Switch  ────────────────────────
     │   bridges Discord channel ↔ Switch room
     ▼
 Claude Code (switch-buddy-admin)
-    │   reads the PR diff from GitHub
+    │   reads the PR diff via gh CLI
     │   analyzes the code
     │   posts a review comment on GitHub
     │   reports findings back to Discord
     ▼
-#stage-one (Discord)
+#pr-review (Discord)
     │
     │  Review done. REQUEST CHANGES — here's why...
     ▼
@@ -77,7 +77,7 @@ A small JavaScript pagination module used as the review target. It has three bra
 | `inline-validation` | Moves validation inline in a way that changes error behaviour |
 | `add-empty-input-test` | Adds a test but gets the expected output wrong |
 
-Each branch gives the agent something real to find.
+Each branch gives the agent something real to find. Point the agent at any of the three PRs and it will catch the issue.
 
 ```
 src/
@@ -92,58 +92,64 @@ test/
 
 ### Prerequisites
 
-- [Switch Console v0.40.1](https://github.com/sandbox-quantum/switch/releases/tag/switch-console-v0.40.1) — desktop app, no terminal needed
-- Docker — required by Switch Console
+- [Switch Console v0.40.1](https://github.com/sandbox-quantum/switch/releases/tag/switch-console-v0.40.1) — download and install the desktop app
+- Docker — must be running before you open Switch Console
 - Node.js 18+
-- An [Anthropic API key](https://console.anthropic.com/settings/keys)
-- A [GitHub personal access token](https://github.com/settings/tokens) with `repo` scope
-- A Discord server with a bot (see step 3)
+- A Discord server (free, takes 2 minutes to create)
 
 ### Setup
 
-**1. Clone and add your keys**
+**1. Install Claude Code and authenticate**
+```bash
+npm install -g @anthropic-ai/claude-code
+claude login
+```
+Opens a browser — sign in with your Anthropic account. Credentials are saved to `~/.claude.json`. Switch Console picks this up automatically when it starts the agent.
+
+**2. Authenticate GitHub**
+```bash
+gh auth login
+```
+Opens a browser — sign in with your GitHub account. Credentials are saved to `~/.config/gh/hosts.yml`. Claude Code uses `gh` for all GitHub operations — reading PRs and posting review comments.
+
+**3. Clone the repo**
 ```bash
 git clone https://github.com/Ashish-kumar0707/switch-demo-app
 cd switch-demo-app
-cp .env.example .env
-# open .env and fill in ANTHROPIC_API_KEY and GITHUB_TOKEN
+npm test   # 4 tests should pass
 ```
 
-**2. Run the install script**
-```bash
-chmod +x install.sh && ./install.sh
-```
-
-This installs Claude Code if missing and verifies your keys are loaded. No `claude login` needed — Claude Code reads `ANTHROPIC_API_KEY` directly from the environment.
-
-**3. Set up Discord bot**
+**4. Create a Discord bot**
 - Go to [discord.com/developers/applications](https://discord.com/developers/applications) → New Application
-- **Bot** tab → copy the token, enable `Server Members Intent` + `Message Content Intent`
-- **OAuth2 → URL Generator** → scopes: `bot` + `applications.commands`, all channel/message permissions → authorize bot into your server
-- **User Settings → Advanced → Developer Mode** → right-click your server → Copy Server ID
+- **Bot** tab → copy the token → enable `Server Members Intent` + `Message Content Intent`
+- **OAuth2 → URL Generator** → scopes: `bot` + `applications.commands` → permissions: View Channels, Send Messages, Send Messages in Threads, Manage Channels, Manage Roles, Manage Webhooks, Read Message History, Attach Files, Add Reactions → open the generated URL → authorize bot into your server
+- In Discord: **User Settings → Advanced → Developer Mode ON** → right-click your server icon → **Copy Server ID**
 
-**4. Connect Discord in Switch Console**
-- Open Switch Console → "On this computer" → Start
+**5. Connect Discord in Switch Console**
+- Open Switch Console → **"On this computer"** → Start
 - Home → Messaging apps → **+ Connect** → Discord
-- Paste bot token and server ID → Connect
-- Link your Discord account
+- Paste bot token + server ID → Connect
+- Click **Link account** → search your Discord username → confirm
 
-**5. Create a room**
+**6. Create a room**
 - Switch Console → `switch-buddy-admin` → **Create room**
-- Select your Discord connection, name it (e.g. `pr-review`)
-- Agent: `switch-buddy-admin` (Claude Code)
-- Switch Console passes `ANTHROPIC_API_KEY` and `GITHUB_TOKEN` to Claude Code automatically
+- Name: `pr-review` → messaging app: your Discord connection → agent: `switch-buddy-admin` (Claude Code)
+- Click **Create room** → **Open in Discord**
 
-**6. Push a demo PR**
+**7. Push a demo PR**
 ```bash
 git push origin fix-offset
-# Then open a PR on GitHub from fix-offset → main
+```
+Then open a PR on GitHub: `fix-offset → main`
+
+**8. Trigger the review in Discord**
+```
+@switch-buddy-admin please review this PR: <GitHub PR URL>
 ```
 
-**7. Trigger the review in Discord**
-```
-@switch-buddy-admin please review this PR: <URL>
-```
+The agent reviews the PR, posts findings in Discord, and comments directly on the GitHub PR — no terminal, no manual steps.
+
+> The agent can review any public GitHub PR, not just this repo. Pass any PR URL and it works.
 
 ---
 
@@ -151,8 +157,9 @@ git push origin fix-offset
 
 | Component | Role |
 |---|---|
-| [Switch Console](https://docs.switchagents.ai) | Runs the agent, bridges Discord |
-| Claude Code | Reviews the PR |
+| [Switch Console](https://docs.switchagents.ai) | Runs Claude Code, bridges it to Discord |
+| Claude Code | Reviews the PR, posts GitHub comments |
+| `gh` CLI | GitHub auth — reads PRs, posts comments |
 | Discord | Where the team talks |
 | GitHub | Where the PR lives |
 | Node.js | The codebase under review |
