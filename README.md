@@ -92,48 +92,55 @@ test/
 
 ### Prerequisites
 
-- [Switch Console](https://github.com/sandbox-quantum/switch/releases/tag/switch-console-v0.40.1) installed and running
-- Claude Code configured as your agent provider
-- A Discord server with the Switch bot added
-- Docker (required by Switch Console)
+- [Switch Console v0.40.1](https://github.com/sandbox-quantum/switch/releases/tag/switch-console-v0.40.1) — desktop app, no terminal needed
+- Docker — required by Switch Console
 - Node.js 18+
-- GitHub CLI (`gh`)
+- An [Anthropic API key](https://console.anthropic.com/settings/keys)
+- A [GitHub personal access token](https://github.com/settings/tokens) with `repo` scope
+- A Discord server with a bot (see step 3)
 
 ### Setup
 
-**1. Clone and install**
+**1. Clone and add your keys**
 ```bash
 git clone https://github.com/Ashish-kumar0707/switch-demo-app
 cd switch-demo-app
-npm test   # 4 tests should pass
+cp .env.example .env
+# open .env and fill in ANTHROPIC_API_KEY and GITHUB_TOKEN
 ```
 
-**2. Bootstrap the demo branches**
+**2. Run the install script**
 ```bash
-# The three demo branches are already in the repo
-git branch -a
+chmod +x install.sh && ./install.sh
 ```
 
-**3. Set up Switch**
+This installs Claude Code if missing and verifies your keys are loaded. No `claude login` needed — Claude Code reads `ANTHROPIC_API_KEY` directly from the environment.
+
+**3. Set up Discord bot**
+- Go to [discord.com/developers/applications](https://discord.com/developers/applications) → New Application
+- **Bot** tab → copy the token, enable `Server Members Intent` + `Message Content Intent`
+- **OAuth2 → URL Generator** → scopes: `bot` + `applications.commands`, all channel/message permissions → authorize bot into your server
+- **User Settings → Advanced → Developer Mode** → right-click your server → Copy Server ID
+
+**4. Connect Discord in Switch Console**
 - Open Switch Console → "On this computer" → Start
-- Home → Messaging apps → Connect → Discord
-- Paste your bot token and server (Guild) ID
+- Home → Messaging apps → **+ Connect** → Discord
+- Paste bot token and server ID → Connect
 - Link your Discord account
 
-**4. Create a room**
-- Switch Console → switch-buddy-admin → Create room
+**5. Create a room**
+- Switch Console → `switch-buddy-admin` → **Create room**
 - Select your Discord connection, name it (e.g. `pr-review`)
-- Agent: switch-buddy-admin (Claude Code)
+- Agent: `switch-buddy-admin` (Claude Code)
+- Switch Console passes `ANTHROPIC_API_KEY` and `GITHUB_TOKEN` to Claude Code automatically
 
-**5. Push a demo PR**
+**6. Push a demo PR**
 ```bash
 git push origin fix-offset
-gh pr create --base main --head fix-offset \
-  --title "Fix offset bug in pagination" \
-  --body "Off-by-one error in page offset calculation"
+# Then open a PR on GitHub from fix-offset → main
 ```
 
-**6. Trigger the review in Discord**
+**7. Trigger the review in Discord**
 ```
 @switch-buddy-admin please review this PR: <URL>
 ```
