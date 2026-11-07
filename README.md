@@ -4,7 +4,7 @@ A workflow where Claude Code reviews pull requests as a teammate in Discord, pow
 
 You open a PR, mention the agent in your team's Discord channel, and get a full code review — findings, severity ratings, and a GitHub comment — without leaving chat.
 
-**Demo video: https://youtu.be/c0EKTkF57ZY**
+**Demo video: https://youtu.be/N7aZT5vrfLE**
 
 ---
 
